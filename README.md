@@ -17,7 +17,7 @@ Set up your environment with these steps:
 ```bash
 conda create -n dtp python=3.10
 conda activate dtp
-conda install pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
+conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 # Alternatively: pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu116
 pip install tensorboard
 pip install -U openmim
