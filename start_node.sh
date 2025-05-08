@@ -8,4 +8,4 @@ GPUS=${2:-1}
 MEM=${3:-64}
 CPUS=${4:-4}
 
-srun -t $TIME --gres=gpu:$GPUS --mem=${MEM}G --cpus-per-task=$CPUS --pty bash
+srun -t $TIME -A cs-503 --qos=cs-503 --gres=gpu:$GPUS --mem=${MEM}G --cpus-per-task=$CPUS --pty bash
