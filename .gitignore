@@ -1,1 +1,7 @@
 .vscode
+*.egg-info
+data
+*.zip
+checkpoints
+__pycache__
+work_dirs
