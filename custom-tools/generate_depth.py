@@ -35,7 +35,20 @@ def generate_depths(img_dir, depth_dir, exts=(".png", ".jpg", ".jpeg")):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Generate depth maps using HuggingFace Transformers depth-estimation pipeline.")
-    parser.add_argument('--img_dir', type=str, required=True, help='Input image directory')
-    parser.add_argument('--depth_dir', type=str, required=True, help='Output depth directory')
+    parser.add_argument('--img_dir', type=str, required=True, help='Input image directory or parent directory')
+    parser.add_argument('--depth_dir', type=str, required=False, help='Output depth directory (ignored in batch mode)')
+    parser.add_argument('--batch_mode', action='store_true', help='If set, process all subdirectories in img_dir, creating _depth folders for each')
     args = parser.parse_args()
-    generate_depths(args.img_dir, args.depth_dir)
+
+    if args.batch_mode:
+        parent_dir = args.img_dir
+        for entry in os.listdir(parent_dir):
+            entry_path = os.path.join(parent_dir, entry)
+            if os.path.isdir(entry_path):
+                out_dir = entry_path + '_depth'
+                print(f"Processing {entry_path} -> {out_dir}")
+                generate_depths(entry_path, out_dir)
+    else:
+        if args.depth_dir is None:
+            raise ValueError("--depth_dir must be specified unless --batch_mode is used.")
+        generate_depths(args.img_dir, args.depth_dir)

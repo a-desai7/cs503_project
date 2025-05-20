@@ -2,7 +2,6 @@ norm_cfg = dict(type="SyncBN", requires_grad=True)
 backbone_norm_cfg = dict(type="LN", requires_grad=True)
 model = dict(
     type="DTP",
-    use_depth=True,
     pretrained=None,
     backbone=dict(
         type="SwinTransformer",
@@ -65,7 +64,7 @@ model = dict(
     disentangle_head=dict(
         type="SODHead",
         channels=32,
-        in_channels=5,
+        in_channels=4,
         ill_embeds_op="-",
         clip=False,
         norm_cfg=dict(type="IN2d", requires_grad=True),
@@ -79,16 +78,13 @@ model = dict(
         loss_retinex=dict(type="PixelLoss", loss_weight=1.0, loss_type="L2"),
     ),
 )
-
 train_pipeline = [
     dict(type="LoadImageFromFile"),
-    dict(type="LoadDepthFromFile", depth_root="data/nightcity-fine/train/depth"),
-    dict(type="ConcatDepth"),
     dict(type="LoadAnnotations"),
     dict(type="Resize", img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
     dict(type="RandomCrop", crop_size=(256, 512), cat_max_ratio=0.75),
     dict(type="RandomFlip", prob=0.5),
-    #dict(type="PhotoMetricDistortion"),
+    dict(type="PhotoMetricDistortion"),
     dict(
         type="Normalize", mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True
     ),
@@ -96,11 +92,8 @@ train_pipeline = [
     dict(type="DefaultFormatBundle"),
     dict(type="Collect", keys=["img", "gt_semantic_seg"]),
 ]
-
 test_pipeline = [
     dict(type="LoadImageFromFile"),
-    dict(type="LoadDepthFromFile", depth_root="data/nightcity-fine/val/depth"),
-    dict(type="ConcatDepth"),
     dict(
         type="MultiScaleFlipAug",
         img_scale=(1024, 512),
@@ -126,13 +119,6 @@ nightlab_train = dict(
     ann_dir="lbl",
     pipeline=train_pipeline,
 )
-cityscapes_train = dict(
-    type="CityscapesDataset",
-    data_root="data/cityscapes",
-    img_dir="leftImg8bit/train",
-    ann_dir="gtFine/train",
-    pipeline=train_pipeline,
-)
 nightlab_test = dict(
     type="NightcityDataset",
     data_root="data/nightcity-fine/val",
@@ -140,47 +126,16 @@ nightlab_test = dict(
     ann_dir="lbl",
     pipeline=test_pipeline,
 )
-cityscapes_test = dict(
-    type="CityscapesDataset",
-    data_root="data/cityscapes",
-    img_dir="leftImg8bit/val",
-    ann_dir="gtFine/val",
-    pipeline=test_pipeline,
-)
 data = dict(
     samples_per_gpu=4,
     workers_per_gpu=2,
     train=dict(
         type="DTPDataset",
-        datasetA=dict(
-            type="NightcityDataset",
-            data_root="data/nightcity-fine/train",
-            img_dir="img",
-            ann_dir="lbl",
-            pipeline=train_pipeline,
-        ),
-        datasetB=dict(
-            type="NightcityDataset",
-            data_root="data/nightcity-fine/train",
-            img_dir="img",
-            ann_dir="lbl",
-            pipeline=train_pipeline,
-        ),
+        datasetA=nightlab_train,
+        datasetB=nightlab_train,
     ),
-    val=dict(
-        type="NightcityDataset",
-        data_root="data/nightcity-fine/val",
-        img_dir="img",
-        ann_dir="lbl",
-        pipeline=test_pipeline,
-    ),
-    test=dict(
-        type="NightcityDataset",
-        data_root="data/nightcity-fine/val",
-        img_dir="img",
-        ann_dir="lbl",
-        pipeline=test_pipeline,
-    ),
+    val=nightlab_test,
+    test=nightlab_test,
 )
 log_config = dict(
     interval=50,

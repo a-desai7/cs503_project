@@ -9,6 +9,8 @@ pip install transformers
 
 python custom-tools/generate_depth.py --img_dir data/nightcity-fine/train/img --depth_dir data/nightcity-fine/train/depth
 python custom-tools/generate_depth.py --img_dir data/nightcity-fine/val/img --depth_dir data/nightcity-fine/val/depth
+python custom-tools/generate_depth.py --img_dir data/cityscapes/leftImg8bit/train --batch_mode
+python custom-tools/generate_depth.py --img_dir data/cityscapes/leftImg8bit/val --batch_mode
 ```
 
 ## Depth training
@@ -27,7 +29,9 @@ Training results will be saved in `work_dirs/cfg_depth/`. After training, drag t
 ## Commands
 ```bash
 # Train
-python custom-tools/train.py checkpoints/night/cfg.py 
+python custom-tools/train.py configs/night_base.py
+python custom-tools/train.py configs/night_depth.py
+python custom-tools/train.py configs/night_day_base.py
 
 # Distributed training
 sh custom-tools/dist_train.sh checkpoints/night/cfg.py <num_gpus>

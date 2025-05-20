@@ -6,21 +6,28 @@ from mmseg.datasets.builder import PIPELINES
 
 @PIPELINES.register_module()
 class LoadDepthFromFile(object):
-    def __init__(self, depth_root=None, depth_suffix='.png'):
-        self.depth_root = depth_root
+    def __init__(self, depth_suffix='.png'):
         self.depth_suffix = depth_suffix
 
     def __call__(self, results):
-        # Get image filename (absolute or relative)
         img_filename = results['img_info']['filename'] if 'img_info' in results else results['filename']
-        # Get basename (e.g. 0001.png)
-        basename = os.path.basename(img_filename)
-        # Compose depth path
-        if self.depth_root is not None:
-            depth_filename = os.path.join(self.depth_root, basename)
+        image_name = os.path.basename(img_filename)
+        image_dir = os.path.dirname(img_filename)
+        image_dir_name = os.path.basename(image_dir)
+        data_dir = os.path.dirname(image_dir)
+        
+        # The depth directory is either in the directory name replaced with 'depth' or appended by "_depth"
+        # Check first to see if a directory exists thats just "depth" in the name
+        if os.path.exists(os.path.join(data_dir, 'depth')):
+            depth_directory = os.path.join(data_dir, 'depth')
+        elif os.path.exists(os.path.join(data_dir, image_dir_name + '_depth')):
+            depth_directory = os.path.join(data_dir, image_dir_name + '_depth')
         else:
-            # fallback: replace 'img' with 'depth' in path
-            depth_filename = img_filename.replace('img', 'depth')
+            raise FileNotFoundError(f"Depth directory not found for image {img_filename}")
+        
+        # Construct the depth filename
+        depth_filename = os.path.join(depth_directory, image_name)        
+
         if not depth_filename.endswith(self.depth_suffix):
             depth_filename = depth_filename.rsplit('.', 1)[0] + self.depth_suffix
         if not os.path.exists(depth_filename):
