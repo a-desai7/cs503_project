@@ -33,5 +33,6 @@ python custom-tools/train.py configs/night_depth.py
 sh custom-tools/dist_train.sh configs/night_depth.py <num_gpus>
 
 # Test
-python custom-tools/test.py configs/night_depth.py <checkpoint> --eval mIoU --aug-test
+python custom-tools/test.py configs/night_base.py <checkpoint> --eval mIoU --aug-test
+python custom-tools/test.py configs/night_depth.py <checkpoint> --eval mIoU --aug-test --using-depth
 ```

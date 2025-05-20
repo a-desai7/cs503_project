@@ -100,6 +100,11 @@ def parse_args():
         type=float,
         default=0.5,
         help='Opacity of painted segmentation map. In (0, 1] range.')
+    parser.add_argument(
+        "--using-depth",
+        action="store_true",
+        help="Whether the test also uses depth information.",
+    )
     parser.add_argument('--local_rank', type=int, default=0)
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
@@ -142,15 +147,16 @@ def main():
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
+    if args.aug_test:
+        index = 1
+        if args.using_depth:
+            index += 2
         
-    # This was implemented in the config
-    # if args.aug_test:
-    #     # hard code index
-    #     cfg.data.test.pipeline[1].img_ratios = [
-    #         0.5, 0.75, 1.0, 1.25, 1.5, 1.75
-    #     ]
-    #     cfg.data.test.pipeline[1].flip = True
-    
+        # hard code index
+        cfg.data.test.pipeline[index].img_ratios = [
+            0.5, 0.75, 1.0, 1.25, 1.5, 1.75
+        ]
+        cfg.data.test.pipeline[index].flip = True
     cfg.model.pretrained = None
     cfg.data.test.test_mode = True
 
