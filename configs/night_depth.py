@@ -99,7 +99,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type="LoadImageFromFile"),
-    dict(type="LoadDepthFromFile", depth_root="data/nightcity-fine/val/depth"),
+    dict(type="LoadDepthFromFile"),
     dict(type="ConcatDepth"),
     dict(
         type="MultiScaleFlipAug",

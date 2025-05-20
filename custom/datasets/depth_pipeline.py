@@ -10,9 +10,9 @@ class LoadDepthFromFile(object):
         self.depth_suffix = depth_suffix
 
     def __call__(self, results):
-        img_filename = results['img_info']['filename'] if 'img_info' in results else results['filename']
-        image_name = os.path.basename(img_filename)
-        image_dir = os.path.dirname(img_filename)
+        img_path = results['img_full_path']
+        image_name = os.path.basename(img_path)
+        image_dir = os.path.dirname(img_path)
         image_dir_name = os.path.basename(image_dir)
         data_dir = os.path.dirname(image_dir)
         
@@ -23,7 +23,7 @@ class LoadDepthFromFile(object):
         elif os.path.exists(os.path.join(data_dir, image_dir_name + '_depth')):
             depth_directory = os.path.join(data_dir, image_dir_name + '_depth')
         else:
-            raise FileNotFoundError(f"Depth directory not found for image {img_filename}")
+            raise FileNotFoundError(f"Depth directory not found for image {img_path}")
         
         # Construct the depth filename
         depth_filename = os.path.join(depth_directory, image_name)        
@@ -31,7 +31,7 @@ class LoadDepthFromFile(object):
         if not depth_filename.endswith(self.depth_suffix):
             depth_filename = depth_filename.rsplit('.', 1)[0] + self.depth_suffix
         if not os.path.exists(depth_filename):
-            raise FileNotFoundError(f"Depth file not found: {depth_filename} for image {img_filename}")
+            raise FileNotFoundError(f"Depth file not found: {depth_filename} for image {img_path}")
         depth = mmcv.imread(depth_filename, flag='grayscale')
         depth = depth.astype(np.float32) / 255.0  # normalize to [0, 1]
         results['depth'] = depth

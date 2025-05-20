@@ -9,8 +9,6 @@ pip install transformers
 
 python custom-tools/generate_depth.py --img_dir data/nightcity-fine/train/img --depth_dir data/nightcity-fine/train/depth
 python custom-tools/generate_depth.py --img_dir data/nightcity-fine/val/img --depth_dir data/nightcity-fine/val/depth
-python custom-tools/generate_depth.py --img_dir data/cityscapes/leftImg8bit/train --batch_mode
-python custom-tools/generate_depth.py --img_dir data/cityscapes/leftImg8bit/val --batch_mode
 ```
 
 ## Depth training
@@ -21,7 +19,7 @@ Make sure depth data was generated and the fixes were applied (there are two). T
 Then on the node, run the following command to start the training:
 ```bash
 conda activate <env>
-sh custom-tools/dist_train.sh checkpoints/night/cfg_depth.py 2
+sh custom-tools/dist_train.sh configs/night_depth.py 2
 ```
 
 Training results will be saved in `work_dirs/cfg_depth/`. After training, drag that folder into `results/` rename it appropriately and add a gitignore exception for the best checkpoint (see .gitignore), and push to save the results.
@@ -31,11 +29,10 @@ Training results will be saved in `work_dirs/cfg_depth/`. After training, drag t
 # Train
 python custom-tools/train.py configs/night_base.py
 python custom-tools/train.py configs/night_depth.py
-python custom-tools/train.py configs/night_day_base.py
 
 # Distributed training
-sh custom-tools/dist_train.sh checkpoints/night/cfg.py <num_gpus>
+sh custom-tools/dist_train.sh configs/night_depth.py <num_gpus>
 
 # Test
-python custom-tools/test.py checkpoints/night/cfg.py <checkpoint> --eval mIoU --aug-test
+python custom-tools/test.py configs/night_depth.py <checkpoint> --eval mIoU --aug-test
 ```

@@ -66,6 +66,7 @@ class LoadImageFromFile(object):
 
         results['filename'] = filename
         results['ori_filename'] = results['img_info']['filename']
+        results['img_full_path'] = osp.abspath(filename)
         results['img'] = img
         results['img_shape'] = img.shape
         results['ori_shape'] = img.shape
