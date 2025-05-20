@@ -19,7 +19,7 @@ Make sure depth data was generated and the fixes were applied (there are two). T
 Then on the node, run the following command to start the training:
 ```bash
 conda activate <env>
-python custom-tools/train.py checkpoints/night/cfg_depth.py
+sh custom-tools/dist_train.sh checkpoints/night/cfg_depth.py 2
 ```
 
 Training results will be saved in `work_dirs/cfg_depth/`. After training, drag that folder into `results/` rename it appropriately and add a gitignore exception for the best checkpoint (see .gitignore), and push to save the results.
