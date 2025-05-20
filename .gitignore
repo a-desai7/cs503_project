@@ -5,4 +5,7 @@ data
 checkpoints/**/*.pth
 __pycache__
 work_dirs/*
-!work_dirs/night_base_25k
+*.pth
+
+# Include best checkpoints
+!best_mIoU_iter_22000.pth
