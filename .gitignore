@@ -4,4 +4,5 @@ data
 *.zip
 checkpoints/**/*.pth
 __pycache__
-work_dirs
+work_dirs/*
+!work_dirs/night_base_25k
