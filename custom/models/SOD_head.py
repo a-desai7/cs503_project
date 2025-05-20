@@ -223,13 +223,13 @@ class SODHead(BaseModule):
         )
         illumination = self.illumination_output(ill_embeds)
         illumination = torch.mean(illumination, dim=1, keepdim=True).repeat(1, 3, 1, 1)
-        reflectance = self.reflectance_output(ref_embeds) + imgs
+        reflectance = self.reflectance_output(ref_embeds) + imgs[:, :3, :, :] # Ignore depth
         return Representations(illumination, reflectance, feats, clip=self.clip)
 
     def forward_train(self, imgs: Tensor) -> Tuple[Representations, dict]:
         repres = self.forward(imgs)
         losses = dict(
             loss_smooth=self.loss_smooth(repres.illumination, repres.reflectance),
-            loss_retinex=self.loss_retinex(repres.retinex(), imgs),
+            loss_retinex=self.loss_retinex(repres.retinex(), imgs[:, :3, :, :]), # Ignore depth
         )
         return repres, losses

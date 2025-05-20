@@ -475,9 +475,30 @@ class Normalize(object):
             dict: Normalized results, 'img_norm_cfg' key is added into
                 result dict.
         """
+        
+        # Take 3 image channels
+        img_shape = results['img'].shape
+        if img_shape[2] == 4:
+            image_to_normalize = results['img'][..., :3]
+            depth_channel = results['img'][..., 3]
+            
+            # normalize depth
+            depth_mean = np.array([0.5], dtype=np.float32)
+            depth_std = np.array([0.5], dtype=np.float32)
+            depth_channel = mmcv.imnormalize(depth_channel, depth_mean, depth_std, False)
+        else:
+            image_to_normalize = results['img']
 
-        results['img'] = mmcv.imnormalize(results['img'], self.mean, self.std,
+        normalized_image = mmcv.imnormalize(image_to_normalize, self.mean, self.std,
                                           self.to_rgb)
+        
+        # Replace only the 3 channels of result
+        if img_shape[2] == 4:
+            results['img'][..., :3] = normalized_image
+            results['img'][..., 3] = depth_channel
+        else:
+            results['img'] = normalized_image
+        
         results['img_norm_cfg'] = dict(
             mean=self.mean, std=self.std, to_rgb=self.to_rgb)
         return results

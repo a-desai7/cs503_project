@@ -30,6 +30,7 @@ class DTP(EncoderDecoder):
         test_cfg=None,
         pretrained=None,
         init_cfg=None,
+        use_depth=False,
     ):
         super().__init__(
             backbone, decode_head, None, None, train_cfg, test_cfg, pretrained, init_cfg
@@ -40,17 +41,34 @@ class DTP(EncoderDecoder):
         self.disturb_mode = disturb_mode
         self.idx = 0
         self.disentanlge_loss = build_loss(disentangle_loss)
+        self.use_depth = use_depth
 
     def norm_imnet2std(self, img: Tensor) -> Tensor:
-        return (
-            img * img.new_tensor([58.395, 57.12, 57.375]).view(1, 3, 1, 1)
-            + img.new_tensor([123.675, 116.28, 103.53]).view(1, 3, 1, 1)
+        # Only normalize the first 3 channels (RGB), leave the 4th (depth) unchanged
+        rgb = img[:, :3, :, :]
+        rest = img[:, 3:, :, :] if img.shape[1] > 3 else None
+        rgb = (
+            rgb * rgb.new_tensor([58.395, 57.12, 57.375]).view(1, 3, 1, 1)
+            + rgb.new_tensor([123.675, 116.28, 103.53]).view(1, 3, 1, 1)
         ).clamp_min(0) / 255.0
+        if rest is not None:
+            img = torch.cat([rgb, rest], dim=1)
+        else:
+            img = rgb
+        return img
 
     def norm_std2imnet(self, img: Tensor) -> Tensor:
-        return (
-            img * 255.0 - img.new_tensor([123.675, 116.28, 103.53]).view(1, 3, 1, 1)
-        ) / img.new_tensor([58.395, 57.12, 57.375]).view(1, 3, 1, 1)
+        # Only denormalize the first 3 channels (RGB), leave the 4th (depth) unchanged
+        rgb = img[:, :3, :, :]
+        rest = img[:, 3:, :, :] if img.shape[1] > 3 else None
+        rgb = (
+            rgb * 255.0 - rgb.new_tensor([123.675, 116.28, 103.53]).view(1, 3, 1, 1)
+        ) / rgb.new_tensor([58.395, 57.12, 57.375]).view(1, 3, 1, 1)
+        if rest is not None:
+            img = torch.cat([rgb, rest], dim=1)
+        else:
+            img = rgb
+        return img
 
     # Illumination estimation for certain classes may be unneeded
     @torch.no_grad()
@@ -116,7 +134,7 @@ class DTP(EncoderDecoder):
             elif mode == "random":
                 noise = self.generate_random_illumination(repreA.illumination)
             else:
-                noise = self.generate_max_illumination(imB)
+                noise = self.generate_max_illumination(imB[:, :3, :, :]) # Ignore depth
         noise = resize(
             noise,
             repreA.illumination.shape[-2:],
@@ -158,11 +176,19 @@ class DTP(EncoderDecoder):
         self.metas = metasA
         mode = self.get_disturb_mode()
         losses = dict()
+        
         imgA, imgB = map(self.norm_imnet2std, [imgA, imgB])
         repreA, disentanlge_lossA = self.disentangle_head.forward_train(imgA)
         repreB, disentanlge_lossB = self.disentangle_head.forward_train(imgB)
+        
         im_RAIB, I_RAIB = self.IDWE(imgA, imgB, repreA, repreB, mode)
         im_RBIA, I_RBIA = self.IDWE(imgB, imgA, repreB, repreA, mode)
+        
+        # If using depth, add back depth
+        if self.use_depth:
+            im_RAIB = torch.cat([im_RAIB, imgA[:, 3:, :, :]], dim=1)
+            im_RBIA = torch.cat([im_RBIA, imgB[:, 3:, :, :]], dim=1)
+        
         repre_RAIB, disentanlge_lossRAIB = self.disentangle_head.forward_train(im_RAIB)
         repre_RBIA, disentanlge_lossRBIA = self.disentangle_head.forward_train(im_RBIA)
         featsA, featsB, featsRAIB, featsRBIA = map(

@@ -7,5 +7,5 @@ __pycache__
 work_dirs/*
 *.pth
 
-# Include best checkpoints
-!best_mIoU_iter_22000.pth
+# Include best checkpoints (we only want to push the best ones, as they're >1GB each)
+!results/night_base_25k/best_mIoU_iter_22000.pth

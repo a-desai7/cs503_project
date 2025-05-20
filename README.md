@@ -11,6 +11,19 @@ python custom-tools/generate_depth.py --img_dir data/nightcity-fine/train/img --
 python custom-tools/generate_depth.py --img_dir data/nightcity-fine/val/img --depth_dir data/nightcity-fine/val/depth
 ```
 
+## Depth training
+Make sure depth data was generated and the fixes were applied (there are two). Then request a node for ~10 hours with 2 GPUs:
+```bash
+./start_node.sh 600 2
+```
+Then on the node, run the following command to start the training:
+```bash
+conda activate <env>
+python custom-tools/train.py checkpoints/night/cfg_depth.py
+```
+
+Training results will be saved in `work_dirs/cfg_depth/`. After training, drag that folder into `results/` rename it appropriately and add a gitignore exception for the best checkpoint (see .gitignore), and push to save the results.
+
 ## Commands
 ```bash
 # Train

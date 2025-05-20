@@ -2,6 +2,7 @@ norm_cfg = dict(type="SyncBN", requires_grad=True)
 backbone_norm_cfg = dict(type="LN", requires_grad=True)
 model = dict(
     type="DTP",
+    use_depth=True,
     pretrained=None,
     backbone=dict(
         type="SwinTransformer",
@@ -64,7 +65,7 @@ model = dict(
     disentangle_head=dict(
         type="SODHead",
         channels=32,
-        in_channels=4,
+        in_channels=5,
         ill_embeds_op="-",
         clip=False,
         norm_cfg=dict(type="IN2d", requires_grad=True),
@@ -78,15 +79,16 @@ model = dict(
         loss_retinex=dict(type="PixelLoss", loss_weight=1.0, loss_type="L2"),
     ),
 )
-img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-crop_size = (256, 512)
+
 train_pipeline = [
     dict(type="LoadImageFromFile"),
+    dict(type="LoadDepthFromFile", depth_root="data/nightcity-fine/train/depth"),
+    dict(type="ConcatDepth"),
     dict(type="LoadAnnotations"),
     dict(type="Resize", img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
     dict(type="RandomCrop", crop_size=(256, 512), cat_max_ratio=0.75),
     dict(type="RandomFlip", prob=0.5),
-    dict(type="PhotoMetricDistortion"),
+    #dict(type="PhotoMetricDistortion"),
     dict(
         type="Normalize", mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True
     ),
@@ -94,8 +96,11 @@ train_pipeline = [
     dict(type="DefaultFormatBundle"),
     dict(type="Collect", keys=["img", "gt_semantic_seg"]),
 ]
+
 test_pipeline = [
     dict(type="LoadImageFromFile"),
+    dict(type="LoadDepthFromFile", depth_root="data/nightcity-fine/val/depth"),
+    dict(type="ConcatDepth"),
     dict(
         type="MultiScaleFlipAug",
         img_scale=(1024, 512),
@@ -119,98 +124,28 @@ nightlab_train = dict(
     data_root="data/nightcity-fine/train",
     img_dir="img",
     ann_dir="lbl",
-    pipeline=[
-        dict(type="LoadImageFromFile"),
-        dict(type="LoadAnnotations"),
-        dict(type="Resize", img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
-        dict(type="RandomCrop", crop_size=(256, 512), cat_max_ratio=0.75),
-        dict(type="RandomFlip", prob=0.5),
-        dict(type="PhotoMetricDistortion"),
-        dict(
-            type="Normalize",
-            mean=[123.675, 116.28, 103.53],
-            std=[58.395, 57.12, 57.375],
-            to_rgb=True,
-        ),
-        dict(type="Pad", size=(256, 512), pad_val=0, seg_pad_val=255),
-        dict(type="DefaultFormatBundle"),
-        dict(type="Collect", keys=["img", "gt_semantic_seg"]),
-    ],
+    pipeline=train_pipeline,
 )
 cityscapes_train = dict(
     type="CityscapesDataset",
     data_root="data/cityscapes",
     img_dir="leftImg8bit/train",
     ann_dir="gtFine/train",
-    pipeline=[
-        dict(type="LoadImageFromFile"),
-        dict(type="LoadAnnotations"),
-        dict(type="Resize", img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
-        dict(type="RandomCrop", crop_size=(256, 512), cat_max_ratio=0.75),
-        dict(type="RandomFlip", prob=0.5),
-        dict(type="PhotoMetricDistortion"),
-        dict(
-            type="Normalize",
-            mean=[123.675, 116.28, 103.53],
-            std=[58.395, 57.12, 57.375],
-            to_rgb=True,
-        ),
-        dict(type="Pad", size=(256, 512), pad_val=0, seg_pad_val=255),
-        dict(type="DefaultFormatBundle"),
-        dict(type="Collect", keys=["img", "gt_semantic_seg"]),
-    ],
+    pipeline=train_pipeline,
 )
 nightlab_test = dict(
     type="NightcityDataset",
     data_root="data/nightcity-fine/val",
     img_dir="img",
     ann_dir="lbl",
-    pipeline=[
-        dict(type="LoadImageFromFile"),
-        dict(
-            type="MultiScaleFlipAug",
-            img_scale=(1024, 512),
-            flip=False,
-            transforms=[
-                dict(type="Resize", keep_ratio=True),
-                dict(type="RandomFlip"),
-                dict(
-                    type="Normalize",
-                    mean=[123.675, 116.28, 103.53],
-                    std=[58.395, 57.12, 57.375],
-                    to_rgb=True,
-                ),
-                dict(type="ImageToTensor", keys=["img"]),
-                dict(type="Collect", keys=["img"]),
-            ],
-        ),
-    ],
+    pipeline=test_pipeline,
 )
 cityscapes_test = dict(
     type="CityscapesDataset",
     data_root="data/cityscapes",
     img_dir="leftImg8bit/val",
     ann_dir="gtFine/val",
-    pipeline=[
-        dict(type="LoadImageFromFile"),
-        dict(
-            type="MultiScaleFlipAug",
-            img_scale=(1024, 512),
-            flip=False,
-            transforms=[
-                dict(type="Resize", keep_ratio=True),
-                dict(type="RandomFlip"),
-                dict(
-                    type="Normalize",
-                    mean=[123.675, 116.28, 103.53],
-                    std=[58.395, 57.12, 57.375],
-                    to_rgb=True,
-                ),
-                dict(type="ImageToTensor", keys=["img"]),
-                dict(type="Collect", keys=["img"]),
-            ],
-        ),
-    ],
+    pipeline=test_pipeline,
 )
 data = dict(
     samples_per_gpu=4,
@@ -222,46 +157,14 @@ data = dict(
             data_root="data/nightcity-fine/train",
             img_dir="img",
             ann_dir="lbl",
-            pipeline=[
-                dict(type="LoadImageFromFile"),
-                dict(type="LoadAnnotations"),
-                dict(type="Resize", img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
-                dict(type="RandomCrop", crop_size=(256, 512), cat_max_ratio=0.75),
-                dict(type="RandomFlip", prob=0.5),
-                dict(type="PhotoMetricDistortion"),
-                dict(
-                    type="Normalize",
-                    mean=[123.675, 116.28, 103.53],
-                    std=[58.395, 57.12, 57.375],
-                    to_rgb=True,
-                ),
-                dict(type="Pad", size=(256, 512), pad_val=0, seg_pad_val=255),
-                dict(type="DefaultFormatBundle"),
-                dict(type="Collect", keys=["img", "gt_semantic_seg"]),
-            ],
+            pipeline=train_pipeline,
         ),
         datasetB=dict(
             type="NightcityDataset",
             data_root="data/nightcity-fine/train",
             img_dir="img",
             ann_dir="lbl",
-            pipeline=[
-                dict(type="LoadImageFromFile"),
-                dict(type="LoadAnnotations"),
-                dict(type="Resize", img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
-                dict(type="RandomCrop", crop_size=(256, 512), cat_max_ratio=0.75),
-                dict(type="RandomFlip", prob=0.5),
-                dict(type="PhotoMetricDistortion"),
-                dict(
-                    type="Normalize",
-                    mean=[123.675, 116.28, 103.53],
-                    std=[58.395, 57.12, 57.375],
-                    to_rgb=True,
-                ),
-                dict(type="Pad", size=(256, 512), pad_val=0, seg_pad_val=255),
-                dict(type="DefaultFormatBundle"),
-                dict(type="Collect", keys=["img", "gt_semantic_seg"]),
-            ],
+            pipeline=train_pipeline,
         ),
     ),
     val=dict(
@@ -269,52 +172,14 @@ data = dict(
         data_root="data/nightcity-fine/val",
         img_dir="img",
         ann_dir="lbl",
-        pipeline=[
-            dict(type="LoadImageFromFile"),
-            dict(
-                type="MultiScaleFlipAug",
-                img_scale=(1024, 512),
-                flip=False,
-                transforms=[
-                    dict(type="Resize", keep_ratio=True),
-                    dict(type="RandomFlip"),
-                    dict(
-                        type="Normalize",
-                        mean=[123.675, 116.28, 103.53],
-                        std=[58.395, 57.12, 57.375],
-                        to_rgb=True,
-                    ),
-                    dict(type="ImageToTensor", keys=["img"]),
-                    dict(type="Collect", keys=["img"]),
-                ],
-            ),
-        ],
+        pipeline=test_pipeline,
     ),
     test=dict(
         type="NightcityDataset",
         data_root="data/nightcity-fine/val",
         img_dir="img",
         ann_dir="lbl",
-        pipeline=[
-            dict(type="LoadImageFromFile"),
-            dict(
-                type="MultiScaleFlipAug",
-                img_scale=(1024, 512),
-                flip=False,
-                transforms=[
-                    dict(type="Resize", keep_ratio=True),
-                    dict(type="RandomFlip"),
-                    dict(
-                        type="Normalize",
-                        mean=[123.675, 116.28, 103.53],
-                        std=[58.395, 57.12, 57.375],
-                        to_rgb=True,
-                    ),
-                    dict(type="ImageToTensor", keys=["img"]),
-                    dict(type="Collect", keys=["img"]),
-                ],
-            ),
-        ],
+        pipeline=test_pipeline,
     ),
 )
 log_config = dict(
@@ -350,9 +215,9 @@ lr_config = dict(
     min_lr=0.0,
     by_epoch=False,
 )
-runner = dict(type="IterBasedRunner", max_iters=100)
-checkpoint_config = dict(by_epoch=False, interval=16000, max_keep_ckpts=3)
-evaluation = dict(interval=50, metric="mIoU", pre_eval=True, save_best="mIoU")
+runner = dict(type="IterBasedRunner", max_iters=30000)
+checkpoint_config = dict(by_epoch=False, interval=1000, max_keep_ckpts=3)
+evaluation = dict(interval=2000, metric="mIoU", pre_eval=True, save_best="mIoU")
 checkpoint_file = "checkpoints/simmim_pretrain__swin_base__img192_window6__800ep.pth"
 fp16 = dict()
 find_unused_parameters = True
