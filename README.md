@@ -27,7 +27,6 @@ Training results will be saved in `work_dirs/cfg_depth/`. After training, drag t
 ## Commands
 ```bash
 # Train
-python custom-tools/train.py configs/night_base.py
 python custom-tools/train.py configs/night_depth.py
 
 # Distributed training
