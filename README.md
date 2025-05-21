@@ -34,5 +34,22 @@ sh custom-tools/dist_train.sh configs/night_depth.py <num_gpus>
 
 # Test
 python custom-tools/test.py configs/night_base.py <checkpoint> --eval mIoU --aug-test
-python custom-tools/test.py configs/night_depth.py <checkpoint> --eval mIoU --aug-test --using-depth
+python custom-tools/test.py configs/night_depth.py <checkpoint> --eval mIoU --aug-test --using-depth # Add --using-depth for depth
+```
+
+## Single image inference
+Create a specific validation folder for the images you want to predict, like `data/nightcity-fine/val/img_test`. Only pick images from the `val` folder so that the respective annotations are present, otherwise also copy over the annotations. Then change the `img_dir` in the config file to point to that folder:
+```python
+nightlab_test = dict(
+    type="NightcityDataset",
+    data_root="data/nightcity-fine/val",
+    img_dir="img_test", # Path changed
+    ann_dir="lbl",
+    pipeline=test_pipeline,
+)
+```
+Then run the following command to predict the images:
+```bash
+python custom-tools/test.py configs/night_base.py <checkpoint> --aug-test --show-dir <output_dir>
+python custom-tools/test.py configs/night_depth.py <checkpoint> --aug-test --show-dir <output_dir> --using-depth # Add --using-depth for depth
 ```
