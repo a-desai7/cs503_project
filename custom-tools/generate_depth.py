@@ -21,8 +21,11 @@ def process_image(img_path, out_path, pipe):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     cv2.imwrite(out_path, depth_np)
 
-def generate_depths(img_dir, depth_dir, exts=(".png", ".jpg", ".jpeg")):
-    pipe = pipeline(task="depth-estimation", model="xingyang1/Distill-Any-Depth-Large-hf")
+def generate_depths(img_dir, depth_dir, exts=(".png", ".jpg", ".jpeg"), use_alt_model=False):
+    model_name = "xingyang1/Distill-Any-Depth-Large-hf"
+    if use_alt_model:
+        model_name = "Intel/dpt-hybrid-midas"  # Example: a lower-quality model
+    pipe = pipeline(task="depth-estimation", model=model_name)
     for root, _, files in os.walk(img_dir):
         for fname in tqdm(files):
             if not fname.lower().endswith(exts):
@@ -38,6 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('--img_dir', type=str, required=True, help='Input image directory or parent directory')
     parser.add_argument('--depth_dir', type=str, required=False, help='Output depth directory (ignored in batch mode)')
     parser.add_argument('--batch_mode', action='store_true', help='If set, process all subdirectories in img_dir, creating _depth folders for each')
+    parser.add_argument('--alt_model', action='store_true', help='Use alternative (lower quality) depth model')
     args = parser.parse_args()
 
     if args.batch_mode:
@@ -47,8 +51,8 @@ if __name__ == "__main__":
             if os.path.isdir(entry_path):
                 out_dir = entry_path + '_depth'
                 print(f"Processing {entry_path} -> {out_dir}")
-                generate_depths(entry_path, out_dir)
+                generate_depths(entry_path, out_dir, use_alt_model=args.alt_model)
     else:
         if args.depth_dir is None:
             raise ValueError("--depth_dir must be specified unless --batch_mode is used.")
-        generate_depths(args.img_dir, args.depth_dir)
+        generate_depths(args.img_dir, args.depth_dir, use_alt_model=args.alt_model)

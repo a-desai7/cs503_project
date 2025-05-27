@@ -82,9 +82,7 @@ model = dict(
         loss_retinex=dict(type='PixelLoss', loss_weight=1.0, loss_type='L2')))
 train_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(
-        type='LoadDepthFromFile',
-        depth_root='data/nightcity-fine/train/depth'),
+    dict(type='LoadDepthFromFile'),
     dict(type='ConcatDepth'),
     dict(type='LoadAnnotations'),
     dict(type='Resize', img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
@@ -101,7 +99,7 @@ train_pipeline = [
 ]
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='LoadDepthFromFile', depth_root='data/nightcity-fine/val/depth'),
+    dict(type='LoadDepthFromFile'),
     dict(type='ConcatDepth'),
     dict(
         type='MultiScaleFlipAug',
@@ -126,33 +124,7 @@ nightlab_train = dict(
     ann_dir='lbl',
     pipeline=[
         dict(type='LoadImageFromFile'),
-        dict(
-            type='LoadDepthFromFile',
-            depth_root='data/nightcity-fine/train/depth'),
-        dict(type='ConcatDepth'),
-        dict(type='LoadAnnotations'),
-        dict(type='Resize', img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
-        dict(type='RandomCrop', crop_size=(256, 512), cat_max_ratio=0.75),
-        dict(type='RandomFlip', prob=0.5),
-        dict(
-            type='Normalize',
-            mean=[123.675, 116.28, 103.53],
-            std=[58.395, 57.12, 57.375],
-            to_rgb=True),
-        dict(type='Pad', size=(256, 512), pad_val=0, seg_pad_val=255),
-        dict(type='DefaultFormatBundle'),
-        dict(type='Collect', keys=['img', 'gt_semantic_seg'])
-    ])
-cityscapes_train = dict(
-    type='CityscapesDataset',
-    data_root='data/cityscapes',
-    img_dir='leftImg8bit/train',
-    ann_dir='gtFine/train',
-    pipeline=[
-        dict(type='LoadImageFromFile'),
-        dict(
-            type='LoadDepthFromFile',
-            depth_root='data/nightcity-fine/train/depth'),
+        dict(type='LoadDepthFromFile'),
         dict(type='ConcatDepth'),
         dict(type='LoadAnnotations'),
         dict(type='Resize', img_scale=(1024, 512), ratio_range=(0.5, 2.0)),
@@ -174,36 +146,7 @@ nightlab_test = dict(
     ann_dir='lbl',
     pipeline=[
         dict(type='LoadImageFromFile'),
-        dict(
-            type='LoadDepthFromFile',
-            depth_root='data/nightcity-fine/val/depth'),
-        dict(type='ConcatDepth'),
-        dict(
-            type='MultiScaleFlipAug',
-            img_scale=(1024, 512),
-            flip=False,
-            transforms=[
-                dict(type='Resize', keep_ratio=True),
-                dict(type='RandomFlip'),
-                dict(
-                    type='Normalize',
-                    mean=[123.675, 116.28, 103.53],
-                    std=[58.395, 57.12, 57.375],
-                    to_rgb=True),
-                dict(type='ImageToTensor', keys=['img']),
-                dict(type='Collect', keys=['img'])
-            ])
-    ])
-cityscapes_test = dict(
-    type='CityscapesDataset',
-    data_root='data/cityscapes',
-    img_dir='leftImg8bit/val',
-    ann_dir='gtFine/val',
-    pipeline=[
-        dict(type='LoadImageFromFile'),
-        dict(
-            type='LoadDepthFromFile',
-            depth_root='data/nightcity-fine/val/depth'),
+        dict(type='LoadDepthFromFile'),
         dict(type='ConcatDepth'),
         dict(
             type='MultiScaleFlipAug',
@@ -233,9 +176,7 @@ data = dict(
             ann_dir='lbl',
             pipeline=[
                 dict(type='LoadImageFromFile'),
-                dict(
-                    type='LoadDepthFromFile',
-                    depth_root='data/nightcity-fine/train/depth'),
+                dict(type='LoadDepthFromFile'),
                 dict(type='ConcatDepth'),
                 dict(type='LoadAnnotations'),
                 dict(
@@ -263,9 +204,7 @@ data = dict(
             ann_dir='lbl',
             pipeline=[
                 dict(type='LoadImageFromFile'),
-                dict(
-                    type='LoadDepthFromFile',
-                    depth_root='data/nightcity-fine/train/depth'),
+                dict(type='LoadDepthFromFile'),
                 dict(type='ConcatDepth'),
                 dict(type='LoadAnnotations'),
                 dict(
@@ -293,9 +232,7 @@ data = dict(
         ann_dir='lbl',
         pipeline=[
             dict(type='LoadImageFromFile'),
-            dict(
-                type='LoadDepthFromFile',
-                depth_root='data/nightcity-fine/val/depth'),
+            dict(type='LoadDepthFromFile'),
             dict(type='ConcatDepth'),
             dict(
                 type='MultiScaleFlipAug',
@@ -320,9 +257,7 @@ data = dict(
         ann_dir='lbl',
         pipeline=[
             dict(type='LoadImageFromFile'),
-            dict(
-                type='LoadDepthFromFile',
-                depth_root='data/nightcity-fine/val/depth'),
+            dict(type='LoadDepthFromFile'),
             dict(type='ConcatDepth'),
             dict(
                 type='MultiScaleFlipAug',
@@ -348,8 +283,6 @@ log_config = dict(
     ])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-load_from = None
-resume_from = 'work_dirs/cfg_depth/iter_11000.pth'
 workflow = [('train', 1)]
 cudnn_benchmark = True
 optimizer = dict(
@@ -371,7 +304,7 @@ lr_config = dict(
     power=1.0,
     min_lr=0.0,
     by_epoch=False)
-runner = dict(type='IterBasedRunner', max_iters=30000)
+runner = dict(type='IterBasedRunner', max_iters=80000)
 checkpoint_config = dict(by_epoch=False, interval=1000, max_keep_ckpts=3)
 evaluation = dict(
     interval=2000, metric='mIoU', pre_eval=True, save_best='mIoU')
@@ -379,5 +312,7 @@ checkpoint_file = 'checkpoints/simmim_pretrain__swin_base__img192_window6__800ep
 fp16 = dict()
 find_unused_parameters = True
 gpu_ids = range(0, 2)
+load_from = None
+resume_from = 'work_dirs/night_depth/latest.pth'
 auto_resume = False
-work_dir = './work_dirs/cfg_depth'
+work_dir = './work_dirs/night_depth'

@@ -143,8 +143,6 @@ log_config = dict(
 )
 dist_params = dict(backend="nccl")
 log_level = "INFO"
-load_from = None
-resume_from = None
 workflow = [("train", 1)]
 cudnn_benchmark = True
 optimizer = dict(
@@ -170,11 +168,13 @@ lr_config = dict(
     min_lr=0.0,
     by_epoch=False,
 )
-runner = dict(type="IterBasedRunner", max_iters=30000)
+runner = dict(type="IterBasedRunner", max_iters=80000)
 checkpoint_config = dict(by_epoch=False, interval=1000, max_keep_ckpts=3)
 evaluation = dict(interval=2000, metric="mIoU", pre_eval=True, save_best="mIoU")
 checkpoint_file = "checkpoints/simmim_pretrain__swin_base__img192_window6__800ep.pth"
 fp16 = dict()
 find_unused_parameters = True
 gpu_ids = range(0, 1)
+load_from = None
+resume_from = "work_dirs/night_base/latest.pth"
 auto_resume = False
