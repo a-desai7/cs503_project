@@ -6,8 +6,9 @@ from mmseg.datasets.builder import PIPELINES
 
 @PIPELINES.register_module()
 class LoadDepthFromFile(object):
-    def __init__(self, depth_suffix='.png'):
+    def __init__(self, depth_suffix='.png', depth_folder=None):
         self.depth_suffix = depth_suffix
+        self.depth_root = depth_folder if depth_folder is not None else 'depth'
 
     def __call__(self, results):
         img_path = results['img_full_path']
@@ -18,8 +19,8 @@ class LoadDepthFromFile(object):
         
         # The depth directory is either in the directory name replaced with 'depth' or appended by "_depth"
         # Check first to see if a directory exists thats just "depth" in the name
-        if os.path.exists(os.path.join(data_dir, 'depth')):
-            depth_directory = os.path.join(data_dir, 'depth')
+        if os.path.exists(os.path.join(data_dir, self.depth_root)):
+            depth_directory = os.path.join(data_dir, self.depth_root)
         elif os.path.exists(os.path.join(data_dir, image_dir_name + '_depth')):
             depth_directory = os.path.join(data_dir, image_dir_name + '_depth')
         else:
