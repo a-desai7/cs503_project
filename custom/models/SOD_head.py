@@ -8,6 +8,7 @@ from .utils import Representations, ResidualBlock, LightAttention
 from mmseg.ops import resize
 from typing import Tuple
 from mmseg.models.builder import HEADS
+import torch.nn.functional as F
 
 
 @HEADS.register_module()
@@ -205,25 +206,35 @@ class SODHead(BaseModule):
             ),
             self.light_attention(feats[0]),
         ]
+        feats = [
+            resize(f, size=feats[0].shape[-2:], mode="bilinear", align_corners=self.align_corners)
+            for f in feats
+        ]
         feats = torch.cat(feats, dim=1)
         feats = self.merge(feats)
         feats = self.residual(feats)
         ill_embeds = self.upsample_illumination(feats)
         ref_embeds = self.upsample_reflectance(feats)
         if self.ill_embeds_op == "+":
-            ref_embeds = self.refine_reflectance(ref_embeds + ill_embeds + img_embeds)
+            ref_embeds = self.refine_reflectance(ref_embeds + ill_embeds)
         elif self.ill_embeds_op == "-":
-            ref_embeds = self.refine_reflectance(ref_embeds - ill_embeds + img_embeds)
+            ref_embeds = self.refine_reflectance(ref_embeds - ill_embeds)
         return ref_embeds, ill_embeds, feats
 
     @auto_fp16(apply_to=("imgs",))
     def forward(self, imgs: Tensor) -> Representations:
+        imgs = F.pad(imgs, (0, 1, 0, 0))  # Pad width by 1 on the right to make it even
         ref_embeds, ill_embeds, feats = self._forward_feature(
             torch.cat([imgs, torch.max(imgs, dim=1, keepdim=True).values], dim=1)
         )
         illumination = self.illumination_output(ill_embeds)
         illumination = torch.mean(illumination, dim=1, keepdim=True).repeat(1, 3, 1, 1)
-        reflectance = self.reflectance_output(ref_embeds) + imgs[:, :3, :, :] # Ignore depth
+        reflectance = self.reflectance_output(ref_embeds) + resize(
+            imgs[:, :3, :, :],
+            size=ref_embeds.shape[-2:],
+            mode="bilinear",
+            align_corners=self.align_corners,
+        )
         return Representations(illumination, reflectance, feats, clip=self.clip)
 
     def forward_train(self, imgs: Tensor) -> Tuple[Representations, dict]:
